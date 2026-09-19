@@ -4,6 +4,14 @@ Agent guidance for developing applications with [Sisk](https://github.com/sisk-h
 
 ## Installation
 
+With [Node.js](https://nodejs.org/) and `npx` available, install the skills with:
+
+```bash
+npx skills add sisk-http/skills
+```
+
+### Manual installation
+
 Clone the repository:
 
 ```bash
