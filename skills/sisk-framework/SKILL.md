@@ -1,24 +1,28 @@
 ---
 name: sisk-framework
-description: Use when a Sisk Framework task spans routing, HTTP, middleware, or realtime APIs and needs guidance on which focused skill to read.
+description: Use when writing or debugging application code on Sisk.HttpServer 1.7: routing and modules, request and server handlers, host builder and bootstrappers, request and response APIs, deferred actions, WebSockets, SSE, and logging. Cadente, Monitoring, MCP, JSON-RPC, and Sisk.Documenting have their own skills.
 ---
-# Sisk Framework — Core
+# Sisk Framework
 
-Sisk is an HTTP framework for .NET that uses `HttpServer`, `Router`, `Route`, `HttpRequest`, and `HttpResponse` as fundamental blocks. Always prefer the fluent API (`.With*`) and C#'s functional patterns when working with Sisk.
+Sisk applications compose `HttpServer`, `Router`, `HttpRequest`, and `HttpResponse` explicitly; MVC-style modules are optional. Read only the reference that matches the change. The references describe Sisk.Core 1.7.
 
-Full reference: https://docs.sisk-framework.org/docs/summary.g
+- [Application architecture](./references/application-architecture.md): read when structuring modules, a shared module base, request-scoped dependencies (`RequestBag`), or route metadata.
+- [Routing](./references/routing.md): read when mapping routes, parameters, modules, auto-scan/AOT, or using `RegexRoute`, `PrefixRoute`, `QUERY`, custom matching, and router error handlers.
+- [Request handlers](./references/request-handlers.md): read when writing route middleware: phases, ordering, short-circuiting, shared state.
+- [Server handlers](./references/server-handlers.md): read when hooking server-wide lifecycle events or diagnosing handler exceptions.
+- [Hosting and bootstrappers](./references/hosting-and-bootstrappers.md): read when composing the host builder or running startup tasks.
+- [Deferred actions](./references/deferred-actions.md): read when work must run after the response is sent.
+- [HTTP primitives](./references/http-primitives.md): read when reading request bodies, JSON, size limits, disconnects, or streams.
+- [Helpers](./references/helpers.md): read when using `SizeHelper`, `PathHelper`, or `MimeHelper`.
+- [Responses and compression](./references/responses-and-compression.md): read when converting route results, setting final headers, or compressing responses.
+- [Realtime](./references/realtime.md): read when implementing WebSockets or SSE.
+- [LogStream](./references/logstreams.md): read when configuring access/error logs or application log files.
 
----
+## Behavior changed in 1.7
 
-## Select the relevant skill
+- `HttpServerConfiguration.MaximumContentLength` defaults to 100 MB (it was unlimited); `0` removes the limit. See [HTTP primitives](./references/http-primitives.md).
+- Static routes are matched before `RegexRoute`, `PrefixRoute`, and custom `Route` subclasses; duplicate `Route.Name` values throw at startup; `Route.UseRegex` is obsolete (use `RegexRoute`); `RouteMethod.Any` includes `Query`; `MapFileSystem` creates a `PrefixRoute`. See [Routing](./references/routing.md).
+- `HttpServerHandler` exceptions are split between startup-aborting and logged-only hooks. See [Server handlers](./references/server-handlers.md).
+- `HttpRequest.DisconnectToken` is `CancellationToken.None` on the default `HttpListener` engine. See [HTTP primitives](./references/http-primitives.md).
 
-Read only the skill needed for the task; go directly to it when the topic is already known. These examples use Sisk Framework types, not the low-level Cadente host API. Confirm signatures against the project's installed version before changing code.
-
-- [sisk-framework-routing](./sisk-framework-routing/SKILL.md): route mapping, route parameters, modules, attributes, prefixes, constraints, and request metadata
-- [sisk-framework-http](./sisk-framework-http/SKILL.md): HttpRequest and HttpResponse fundamentals
-- [sisk-framework-handlers](./sisk-framework-handlers/SKILL.md): request handlers, middleware flow, compression, and server handlers
-- [sisk-framework-realtime](./sisk-framework-realtime/SKILL.md): WebSockets, SSE, and LogStream
-
-For other Sisk packages, use [Cadente](../sisk-cadente/SKILL.md) for the HTTP engine, [MCP](../sisk-model-context-protocol/SKILL.md) for tool servers, [Documenting](../sisk-document/SKILL.md) for endpoint annotations, or [Monitoring](../sisk-monitoring/SKILL.md) for the embedded dashboard.
-
-Validate an implementation with the affected project's build and a focused check of the changed route or lifecycle behavior. A review request remains read-only; loading a skill does not authorize a refactor.
+For additional details, see the [official Sisk Getting Started documentation](https://docs.sisk-framework.org/docs/getting-started).

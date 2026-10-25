@@ -1,29 +1,19 @@
 ---
 name: sisk-model-context-protocol
-description: Use when building or diagnosing a Sisk.ModelContextProtocol server and selecting guidance for setup, tool schemas, execution, or protocol behavior.
+description: Use when building or reviewing a Sisk.ModelContextProtocol server that exposes MCP tools or Agent Skills over Streamable HTTP.
 ---
 # Sisk.ModelContextProtocol
 
-Implements an MCP (Model Context Protocol) server over **Streamable HTTP** transport, allowing Sisk applications to expose tools that AI/LLM agent clients can call.
+Use `Sisk.ModelContextProtocol` to expose **Tools** and static **Agent Skills** (`McpSkill`, extension `io.modelcontextprotocol/skills`) over MCP Streamable HTTP. Modern requests are stateless; the supported protocol version is exposed as `McpProvider.PROTOCOL_VERSION` — read the constant, never hard-code a literal — and a legacy `initialize` flow remains for older clients. Prompts, Completions, Logging, and resources other than skill files are not implemented.
 
+```bash
+dotnet add package Sisk.ModelContextProtocol --prerelease
 ```
-dotnet add package Sisk.ModelContextProtocol
-```
 
-> **Status: Under development.** Only **Tools** are currently supported. Prompts, Resources, Completions, and server-side Logging are not yet implemented.  
-> Protocol version: `2025-06-18`
+Read the reference that matches the task before changing code:
 
-Reference: https://docs.sisk-framework.org/docs/extensions/mcp  
-Namespace: `Sisk.ModelContextProtocol`
+- [Setup](./references/setup.md) — when wiring the POST route, `McpProvider`/`UseMcp`, required protocol headers and `_meta`, origin and authentication.
+- [Tools and schemas](./references/tools-and-schemas.md) — when defining `McpTool`, input/output schemas, and authorization/validation, or publishing `McpSkill` objects.
+- [Runtime and results](./references/runtime-and-results.md) — when writing handlers (context, cancellation, results), handling failures, or checking handled methods, error codes, and legacy compatibility.
 
----
-
-## Select the relevant skill
-
-Read only the matching skill; go directly to it when the topic is known. This is server-library guidance, not instructions for configuring an MCP client or executing its tools. Confirm capabilities and protocol behavior against the installed package before promising support.
-
-- [sisk-mcp-setup](./sisk-mcp-setup/SKILL.md): quick setup using standalone providers or UseMcp
-- [sisk-mcp-tools-schema](./sisk-mcp-tools-schema/SKILL.md): McpProvider, McpTool, and JSON schema builder
-- [sisk-mcp-runtime](./sisk-mcp-runtime/SKILL.md): McpToolContext, McpToolResult, handled methods, error handling, and notes
-
-For an implementation, build the affected project and check the changed protocol path with harmless local inputs, including invalid arguments when schemas change. Do not invoke paid, destructive, or external tools merely to validate wiring.
+For additional details, see the [official Sisk Model Context Protocol documentation](https://docs.sisk-framework.org/docs/extensions/mcp).

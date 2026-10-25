@@ -1,57 +1,49 @@
 # Sisk Agent Skills
 
-Agent guidance for developing applications with [Sisk](https://github.com/sisk-http). This catalog contains 15 skills covering the framework, Cadente, MCP servers, endpoint documentation, and monitoring.
+A public catalog of agent skills for building and operating applications with the [Sisk Framework](https://github.com/sisk-http). Each skill represents a Sisk package or a distinct package-level capability and links to focused references loaded only when needed.
 
-## Installation
+## Install
 
-With [Node.js](https://nodejs.org/) and `npx` available, install the skills with:
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) with `npm` and `npx` available.
+
+### Add the catalog
 
 ```bash
 npx skills add sisk-http/skills
 ```
 
-### Manual installation
+The installer lets you select the skills and supported agents available in your environment. Run the same command again to update an existing installation.
 
-Clone the repository:
+## Available skills
 
-```bash
-git clone https://github.com/sisk-http/skills.git
-```
-
-For Avi, copy the contents of this repository's `skills/` directory into `$HOME/.agents/skills/` for global availability, or into your project's `.agents/skills/` directory. Preserve the nested directories: the entrypoints link to focused skills using relative paths. Review existing files before copying to avoid overwriting local customizations.
-
-Other agents can read the Markdown files directly or use their supported skill installation mechanism. Discovery and installation behavior depend on the agent.
-
-## Catalog
-
-| Area | Entrypoint | Focused skills |
-| --- | --- | --- |
-| Framework | [sisk-framework](skills/sisk-framework/SKILL.md) | [Routing](skills/sisk-framework/sisk-framework-routing/SKILL.md), [HTTP](skills/sisk-framework/sisk-framework-http/SKILL.md), [Handlers](skills/sisk-framework/sisk-framework-handlers/SKILL.md), [Realtime and logging](skills/sisk-framework/sisk-framework-realtime/SKILL.md) |
-| Cadente | [sisk-cadente](skills/sisk-cadente/SKILL.md) | [Setup](skills/sisk-cadente/sisk-cadente-setup/SKILL.md), [Host APIs](skills/sisk-cadente/sisk-cadente-host/SKILL.md), [Reference types](skills/sisk-cadente/sisk-cadente-reference/SKILL.md) |
-| Model Context Protocol | [sisk-model-context-protocol](skills/sisk-model-context-protocol/SKILL.md) | [Setup](skills/sisk-model-context-protocol/sisk-mcp-setup/SKILL.md), [Tools and schemas](skills/sisk-model-context-protocol/sisk-mcp-tools-schema/SKILL.md), [Runtime and results](skills/sisk-model-context-protocol/sisk-mcp-runtime/SKILL.md) |
-| Endpoint documentation | [sisk-document](skills/sisk-document/SKILL.md) | Annotations, request/response examples, and OpenAPI/HTML generation |
-| Monitoring | [sisk-monitoring](skills/sisk-monitoring/SKILL.md) | Dashboard setup, authentication, counters, meters, and log capture |
+| Skill | Scope |
+| --- | --- |
+| `sisk-framework` | Core hosting, routing, controller-like `RouterModule` architecture, request-scoped dependencies, handlers, bootstrappers, deferred actions, HTTP, realtime connections, and logging. |
+| `sisk-cadente` | Experimental managed HTTP/1.1 engine integration and standalone Cadente host APIs. |
+| `sisk-model-context-protocol` | MCP Streamable HTTP setup, tools, schemas, runtime behavior, and protocol errors. |
+| `sisk-document` | Endpoint annotations, OpenAPI/HTML generation, schemas, examples, and documentation validation. |
+| `sisk-monitoring` | Embedded monitoring dashboards, counters, meters, logs, health history, access control, and persistence. |
+| `sisk-ini-configuration` | INI parsing and portable Sisk host configuration for listeners, server settings, CORS, and parameters. |
+| `sisk-json-rpc` | JSON-RPC 2.0 methods, HTTP/WebSocket transports, serialization, documentation, and protocol errors. |
 
 ## Usage
 
-Ask your agent to use the skill matching the task, for example:
+Ask the agent to use the skill that matches the package or task. For example:
 
 ```text
-Use sisk-framework-routing to add a route to the existing RouterModule.
+Use the sisk-framework skill to design a RouterModule API with authentication middleware and request-scoped repositories.
 ```
 
-Read a package entrypoint when choosing a topic; read a focused skill directly when the topic is already known. Load only the guidance relevant to the task. Skills provide context, not permission to deploy, expose services, or invoke external tools.
+Every skill starts at `skills/<name>/SKILL.md`. The entrypoint provides decision guidance and links to detailed files under `references/`. References are not separate catalog entries; agents should load only the reference relevant to the current task.
 
-## Compatibility and validation
+## Scope and source accuracy
 
-Check APIs and defaults against the application's installed package version, especially for experimental components such as Cadente and Sisk.ModelContextProtocol. Examples are illustrative and may rely on application-provided types or surrounding setup.
+The catalog is grounded in current Sisk source, tests, and official documentation. Application architecture examples are intentionally neutral: response envelopes, repository layouts, authorization policy, persistence choices, and business exceptions remain application decisions.
 
-The published catalog was checked for metadata, relative links, preserved skill names, balanced code fences, and selection/safety scenarios. These structural checks do not establish runtime compatibility with every Sisk release; the examples were not compiled or executed as a complete application.
-
-## Contributing
-
-Keep changes focused, preserve public skill names and relative links, and verify version-sensitive claims against the relevant source or official documentation. Do not include credentials, private application data, or machine-specific configuration.
+Package APIs can change, especially prerelease or experimental components such as Cadente. Verify the target project's installed Sisk version before applying version-sensitive guidance.
 
 ## License
 
-[MIT](LICENSE).
+This project is distributed under the [MIT License](LICENSE).

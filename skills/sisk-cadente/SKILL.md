@@ -1,24 +1,17 @@
 ---
 name: sisk-cadente
-description: Use when choosing between Sisk.Cadente engine integration and standalone HTTP/1.1 hosting, or locating its host, TLS, and timeout guidance.
+description: Use when enabling, configuring, or debugging Sisk.Cadente, the managed HTTP/1.1 listener, either as a Sisk engine (CadenteHttpServerEngine) or as a standalone HttpHost with handlers, TLS/mTLS, and timeouts.
 ---
 # Sisk.Cadente
 
-Cadente is an **experimental** fully managed HTTP/1.1 server for Sisk, replacing the default `System.Net.HttpListener`. Key advantages: native SSL/TLS on all platforms, consistent cross-platform behavior, no dependency on `HttpListener`.
+> **Experimental (Beta):** the official documentation does not recommend Cadente for critical production environments, and its API and behavior may change. It implements HTTP/1.1 (no HTTP/2 or QUIC), and `Sisk.Cadente` / `Sisk.Cadente.CoreEngine` target .NET 9 and .NET 10 only, so they cannot be referenced from a .NET 8 project.
 
-> **Status: Beta** — API may change. Not recommended for critical production without testing.
+For a Sisk application, use `CadenteHttpServerEngine` from `Sisk.Cadente.CoreEngine` as the primary integration path. Use standalone `HttpHost` (package `Sisk.Cadente`, no Sisk dependency) only when direct, low-level control of Cadente connections is actually required.
 
-Reference: https://docs.sisk-framework.org/docs/cadente  
-Packages: `Sisk.Cadente` (standalone), `Sisk.Cadente.CoreEngine` (Sisk integration)
+Read the matching reference before changing code:
 
----
+- [Setup and integration](references/setup.md): read when adding the package, wiring the engine into a Sisk server, configuring TLS/mTLS or engine-level timeouts, or starting a standalone host.
+- [Host APIs](references/host-apis.md): read when writing or debugging a standalone `HttpHostHandler`: request bodies, response framing, keep-alive, and request validation.
+- [Reference types](references/reference-types.md): read when using `HttpHostClient`, `HttpHeaderList`/`HttpHeader`, `HttpsOptions`, or `HttpHostTimeoutManager`, including their defaults.
 
-## Select the relevant skill
-
-Read only the matching skill; go directly to it when the topic is known. Cadente host types differ from [Sisk Framework HTTP types](../sisk-framework/sisk-framework-http/SKILL.md). Check APIs and defaults against the installed version; this experimental package may change.
-
-- [sisk-cadente-setup](./sisk-cadente-setup/SKILL.md): Cadente as Sisk engine and standalone server setup
-- [sisk-cadente-host](./sisk-cadente-host/SKILL.md): HttpHost, HttpHostHandler, HttpHostContext, request, and response APIs
-- [sisk-cadente-reference](./sisk-cadente-reference/SKILL.md): client, headers, HTTPS options, timeouts, and stream lifetime rules
-
-Validate changed behavior with a build and a focused local request covering the affected framing, TLS, timeout, or lifecycle path. Do not start listeners or change certificates merely to review this guidance.
+For additional details, see the [official Sisk Cadente documentation](https://docs.sisk-framework.org/docs/cadente).

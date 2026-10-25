@@ -1,192 +1,23 @@
 ---
 name: sisk-monitoring
-description: Use when configuring or diagnosing the Sisk.Monitoring dashboard, counters, meters, log capture, or dashboard authentication.
+description: Use when adding, securing, customizing, or diagnosing the Sisk.Monitoring dashboard - UseMonitoring registration, Counter, Meter, LogStream capture, Basic Auth, persistence, health and HTTP telemetry.
 ---
 
 # Sisk.Monitoring
 
-## Overview
+For additional details, see the [official Sisk documentation](https://docs.sisk-framework.org/docs/) and the [official Sisk.Monitoring package page](https://www.nuget.org/packages/Sisk.Monitoring).
 
-`Sisk.Monitoring` provides an embedded web dashboard for monitoring application counters, meters, and log streams. It integrates directly with `HttpServerHostContextBuilder` and renders an HTML UI accessible via browser.
+`Sisk.Monitoring` embeds a Basic Auth dashboard in a Sisk server (`UseMonitoring` on `HttpServerHostContextBuilder`) showing HTTP telemetry, `Counter`, `Meter`, `LogStream` and server-health data.
 
-## Core Types
+Invariants that cause most failures:
 
-### `ApplicationMonitor`
+- Every dashboard route answers `401` until `ApplicationMonitor.CredentialValidator` is set or `AuthenticateAccountAsync` is overridden.
+- One `ApplicationMonitor` serves one route prefix; reusing an instance for a second prefix throws `InvalidOperationException`.
+- Capture resources and set `Store`/`StoreFlushInterval` before the server starts (normally inside the `UseMonitoring` callback or factory). State is restored and the flush loop starts when the server first starts.
+- `UseMonitoring` never disposes the monitor and nothing flushes the store on shutdown; see the lifecycle section of the setup reference.
 
-The main class. Hosts the dashboard routes and manages the registered resources.
+Read the reference that matches the task:
 
-```csharp
-var monitor = new ApplicationMonitor();
-monitor.PageTitle = "My App";
-monitor.CaptureCounter(new MonitoringDefinition<Counter>("Requests", counter));
-monitor.CaptureMeter(new MonitoringDefinition<Meter>("Throughput", meter));
-monitor.CaptureLogStream(new MonitoringDefinition<LogStream>("App Log", logStream));
-```
-
-Key members:
-- `PageTitle` — title shown in the dashboard header and browser tab.
-- `CredentialValidator` — optional `Func<NetworkCredential, ValueTask<bool>>` for Basic Auth protection.
-- `CaptureCounter(MonitoringDefinition<Counter>)` — registers a counter.
-- `CaptureMeter(MonitoringDefinition<Meter>)` — registers a meter.
-- `CaptureLogStream(MonitoringDefinition<LogStream>, int bufferLineCount = 500)` — registers a log stream and starts buffering it.
-- `GetRoutes(string prefix)` — internal; returns the dashboard routes for a given prefix.
-
-Virtual overrides for customization:
-- `AuthenticateAccountAsync(string email, string password)` — override to plug in custom auth logic.
-- `WriteSidebar(string? activeNavItem)` — override to change sidebar HTML.
-- `GetDashboardPageHtmlAsync(HttpRequest)` — override dashboard page.
-- `GetCountersPageHtmlAsync(HttpRequest)` — override counters page.
-- `GetMetersPageHtmlAsync(HttpRequest)` — override meters page.
-- `GetMetersDataAsync(HttpRequest)` — override meters JSON endpoint.
-- `GetLogStreamPageHtmlAsync(HttpRequest, MonitoringDefinition<LogStream>)` — override log stream page.
-
----
-
-### `MonitoringDefinition<T>`
-
-Wraps a monitored resource with metadata.
-
-```csharp
-new MonitoringDefinition<Counter>("label", counter)
-new MonitoringDefinition<Counter>("label", "GroupName", counter)
-```
-
-Properties:
-- `Instance` — the monitored object.
-- `Label` — display name.
-- `Group` — optional group name for sidebar/grid grouping.
-- `DashboardPinned` — if `true`, the resource appears on the main dashboard page.
-- `SanitizedLabel` — URL-encoded label used in route paths.
-
----
-
-### `Counter`
-
-Thread-safe, time-expiring accumulator. Each increment has a configurable TTL; `Current` returns the live sum of non-expired increments.
-
-```csharp
-var counter = new Counter();
-counter.DefaultDuration = TimeSpan.FromHours(1);
-counter.Increment();           // +1 with DefaultDuration
-counter.Increment(5);          // +5 with DefaultDuration
-counter.Increment(1, TimeSpan.FromMinutes(30)); // +1 for 30 min
-double value = counter.Current;
-counter.Reset();
-```
-
----
-
-### `Meter`
-
-Sliding-window time-series recorder. Accumulates `MeterReading` values; `Read()` aggregates them into buckets.
-
-```csharp
-var meter = new Meter(TimeSpan.FromHours(12)); // custom window; new Meter() defaults to 24 hours
-
-meter.Increment();     // +1
-meter.Increment(42.5); // +42.5
-
-// Read with 1-hour buckets (default)
-foreach (var reading in meter.Read())
-    Console.WriteLine($"{reading.Timestamp}: {reading.Value}");
-
-// Read with custom tick
-foreach (var reading in meter.Read(TimeSpan.FromMinutes(15)))
-    Console.WriteLine($"{reading.Timestamp}: {reading.Value}");
-
-meter.Reset();
-```
-
-`MeterReading` is a `record struct(double Value, DateTime Timestamp)`.
-
----
-
-## Setup with `HttpServerHostContextBuilder`
-
-### Simple setup (default `/monitoring` path)
-
-```csharp
-builder.UseMonitoring(monitor => {
-    monitor.PageTitle = "My App Monitor";
-    monitor.CaptureCounter(new MonitoringDefinition<Counter>("HTTP Requests", requestCounter) {
-        DashboardPinned = true
-    });
-    monitor.CaptureMeter(new MonitoringDefinition<Meter>("Requests/hour", requestMeter) {
-        DashboardPinned = true,
-        Group = "Traffic"
-    });
-    monitor.CaptureLogStream(new MonitoringDefinition<LogStream>("Main Log", logStream) {
-        DashboardPinned = true
-    });
-});
-```
-
-### Custom base path
-
-```csharp
-builder.UseMonitoring("/admin/monitoring", monitor => {
-    // configure monitor
-});
-```
-
-### Custom `ApplicationMonitor` subclass
-
-```csharp
-builder.UseMonitoring(() => new MyCustomMonitor());
-builder.UseMonitoring("/metrics", () => new MyCustomMonitor());
-```
-
----
-
-## Authentication
-
-When no validator is set, the dashboard is publicly accessible. Configure authentication before exposing it outside a trusted local environment, and use HTTPS for Basic Auth. Captured logs can contain sensitive data; filter them before writing.
-
-Assign an application-provided validator with the declared contract:
-
-```csharp
-Func<NetworkCredential, ValueTask<bool>> validateCredentials = credentialValidator;
-monitor.CredentialValidator = validateCredentials;
-```
-
-`credentialValidator` above is supplied by the application's authentication service; it must reject invalid credentials. Do not embed example usernames or passwords in production code. For a custom monitor subclass, override `AuthenticateAccountAsync(string email, string password)` and delegate to the same authentication service.
-
----
-
-## Dashboard Routes (auto-registered)
-
-| Path | Description |
-|------|-------------|
-| `{prefix}/` | Dashboard overview (pinned resources) |
-| `{prefix}/counters` | All registered counters |
-| `{prefix}/meters` | All registered meters with charts |
-| `{prefix}/meters/data` | JSON endpoint for meter data (`?name=Label`) |
-| `{prefix}/logstream/{name}` | Log stream viewer for a specific stream |
-| `{prefix}/health` | Server health information |
-
----
-
-## Grouping
-
-Use `Group` on `MonitoringDefinition<T>` to organize resources in the sidebar and on pages. Items without a group appear under a default group key.
-
-```csharp
-new MonitoringDefinition<Counter>("DB Queries", "Database", dbQueryCounter)
-new MonitoringDefinition<Counter>("Cache Hits",  "Cache",    cacheHitCounter)
-```
-
----
-
-## Patterns and Best Practices
-
-- Define counters and meters as singletons (e.g., static fields or DI singletons) so they accumulate values across requests.
-- Set `DashboardPinned = true` only for the most important resources you want visible at a glance.
-- Keep `Counter.DefaultDuration` aligned with your reporting window (e.g., 1 hour for "requests per hour").
-- Use `Meter` for time-series charts; use `Counter` for simple current-value cards.
-- Use `Group` to keep the sidebar readable when you have many resources.
-- Override `ApplicationMonitor` virtual methods only when you need to customize the HTML output.
-- Always call `CaptureLogStream` before the log stream receives any writes — buffering must be started first.
-
-## Completion
-
-Build the affected project and check the configured dashboard path, authentication rejection/acceptance, and the changed counter, meter, or log capture using non-sensitive local data. Do not publish the dashboard or capture real credentials merely to validate setup.
+- [setup-and-access](./references/setup-and-access.md) - read when registering the dashboard, choosing a `UseMonitoring` overload, configuring credentials, or handling start/stop/disposal.
+- [resources-and-persistence](./references/resources-and-persistence.md) - read when adding or changing `Counter`, `Meter`, `LogStream` capture, labels/groups/keys/pinning, the `Store`, health history, or HTTP telemetry.
+- [routes-and-customization](./references/routes-and-customization.md) - read when calling dashboard routes, protecting or proxying them, or overriding pages and JSON endpoints in an `ApplicationMonitor` subclass.
